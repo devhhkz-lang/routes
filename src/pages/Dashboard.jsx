@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { getItems } from "../services/service";
-import useFetch from "../hooks/useFetch";
+import { useItems } from "../hooks/useItems";
 import Status from "../components/Status";
 
 // Считает, сколько товаров в каждой группе
@@ -27,7 +26,7 @@ function Breakdown({ title, counts, param }) {
 
 export default function Dashboard() {
   const [minRating, setMinRating] = useState(0); // интерактивный фильтр
-  const { data, error, loading } = useFetch(getItems, []);
+  const { data, error, loading } = useItems();
 
   const items = (data || []).filter((i) => i.rating >= minRating);
   const total = items.length;

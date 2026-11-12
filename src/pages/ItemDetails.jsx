@@ -1,12 +1,11 @@
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { getItem } from "../services/service";
-import useFetch from "../hooks/useFetch";
+import { useItem } from "../hooks/useItems";
 import Status from "../components/Status";
 
 export default function ItemDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: item, error, loading } = useFetch(() => getItem(id), [id]);
+  const { data: item, error, loading } = useItem(id);
 
   return (
     <>

@@ -236,3 +236,12 @@ h1 + select { margin: 4px 0 8px; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+/* Авторизация и профиль */
+.login label { display: grid; gap: 5px; }
+.login input { width: 100%; }
+.login p { margin: 0; }
+.login .secondary { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.navbar button { padding: 4px 12px; }
+.profile { max-width: 600px; }
+.profile dd { margin: 0 0 20px; overflow-wrap: anywhere; }
+.profile dt { color: var(--muted); }

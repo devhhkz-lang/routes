@@ -1,6 +1,5 @@
 import { useSearchParams } from "react-router-dom";
-import { getItems } from "../services/service";
-import useFetch from "../hooks/useFetch";
+import { useItems } from "../hooks/useItems";
 import Card from "../components/Card";
 import Status from "../components/Status";
 
@@ -17,14 +16,14 @@ function Select({ value, onChange, options, label }) {
 
 export default function Items() {
   const [params, setParams] = useSearchParams();
-  const { data, error, loading } = useFetch(getItems, []);
+  const { data, error, loading } = useItems();
 
   // Значения берём из URL
   const q = params.get("q") || "";
   const category = params.get("category") || "";
   const stock = params.get("stock") || "";
   const sort = params.get("sort") || "";
-  const page = Number(params.get("page")) || 1;
+  const requestedPage = Number(params.get("page"));
 
   // Меняем один параметр в URL (при смене фильтра возвращаемся на 1 страницу)
   function update(key, value) {
@@ -53,6 +52,7 @@ export default function Items() {
 
   // Пагинация
   const pages = Math.ceil(items.length / PER_PAGE);
+  const page = Number.isInteger(requestedPage) ? Math.max(1, Math.min(requestedPage, pages || 1)) : 1;
   const visible = items.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   return (

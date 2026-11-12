@@ -1,6 +1,87 @@
-# Запуск
-npm create vite@latest my-app -- --template react
-cd my-app
-npm install react-router-dom
-# замените папку src и скопируйте public/_redirects и vercel.json
+# React Router: каталог, кеширование и Firebase Auth
+
+Существующий проект каталога DummyJSON дополнен авторизацией и TanStack Query.
+
+## Запуск
+
+Требуется Node.js 24.12+ (`nvm use` использует `.nvmrc`).
+
+```sh
+npm install
+cp .env.example .env.local
 npm run dev
+```
+
+Заполните `.env.local` значениями Web app configuration из Firebase Console → Project settings → Your apps. Используются переменные `VITE_FIREBASE_*` из `.env.example`. После изменения переменных перезапустите Vite. `.env.local` исключён из Git. Переменные Vite попадают в клиентский bundle: не добавляйте туда service account или приватные серверные ключи.
+
+В Firebase Console:
+
+1. Создайте проект и зарегистрируйте Web app.
+2. В Authentication → Sign-in method включите Email/Password и Google; укажите support email для Google.
+3. В Authentication → Settings → Authorized domains добавьте `localhost` и домен опубликованного приложения.
+4. Скопируйте конфигурацию Web app в `.env.local`.
+
+Без конфигурации каталог работает, а формы авторизации показывают инструкцию и блокируют отправку. Поддельная авторизация не используется.
+
+## Маршруты и авторизация
+
+Сохранены `/`, `/about`, `/items`, `/items/:id`, `/dashboard` и страница 404. Поиск, фильтры, сортировка, пагинация через URL и lazy loading сохранены.
+
+- `/login`: email/пароль и Google popup.
+- `/signup`: email, пароль от 6 символов и подтверждение пароля.
+- `/profile`: защищённая страница с email, UID и выходом.
+- Неавторизованный посетитель возвращается после входа на исходный защищённый маршрут.
+- `AuthProvider` и `useAuth` отслеживают `onAuthStateChanged`; первоначальная проверка сессии завершается до перенаправления.
+- `browserLocalPersistence` сохраняет сессию после обновления страницы.
+- NavBar меняется в зависимости от сессии. Ошибки входа и выхода отображаются пользователю.
+
+Инициализация Firebase: `src/firebase.js`; операции Auth: `src/services/auth.js`; контекст: `src/context/AuthContext.jsx`.
+
+## Стратегия кеширования
+
+TanStack Query хранит данные в памяти. Ключ списка — `['products', 'list']`, ключ карточки — `['products', 'detail', String(id)]`. Каталог и Dashboard разделяют запрос списка, поэтому повторный переход в течение 5 минут не требует нового запроса. Фильтрация и пагинация выполняются по этому списку локально.
+
+- `staleTime`: 5 минут; `gcTime`: 30 минут после ухода последнего подписчика.
+- Устаревшие данные перепроверяются при монтировании, возвращении фокуса и восстановлении соединения.
+- Неудачный запрос повторяется один раз; интерфейс обрабатывает загрузку, ошибку и пустую выдачу.
+- `AbortSignal` передаётся в `fetch`: ненужные запросы отменяются. Отдельные query keys не позволяют ответу старой карточки заменить данные новой.
+- `useItemMutation` поддерживает create/update/delete и после успешной операции инвалидирует все ключи `['products']`; активные запросы перечитываются. Все будущие формы редактирования должны использовать этот хук.
+
+В исходном проекте нет интерфейса CRUD, поэтому он не добавлен. DummyJSON только имитирует изменения: POST/PUT/DELETE не сохраняются на сервере, и повторная загрузка возвращает исходные данные.
+
+API-запросы находятся в сервисе, кеширование — в хуках; UI не обращается напрямую к API или localStorage.
+
+## Проверки
+
+```sh
+npm run lint
+npm run build
+```
+
+Ручная проверка с настроенным Firebase:
+
+1. Откройте `/profile` без сессии: ожидается `/login`.
+2. Зарегистрируйтесь; проверьте несовпадающие пароли и занятый email.
+3. Войдите по email/паролю и через Google.
+4. Обновите `/profile`: email и UID сохраняются; выйдите и проверьте защиту маршрута.
+5. Перейдите каталог → Dashboard → каталог: в Network нет повторного запроса списка в пределах 5 минут.
+6. Откройте разные карточки быстро; проверьте поиск, фильтры, сортировку и пагинацию, в том числе после обновления URL.
+7. Проверьте сообщения при недоступности API и пустом результате поиска.
+
+## Публикация
+
+```sh
+npm run build
+```
+
+Публикуйте папку `dist`. Конфигурация SPA для Vercel (`vercel.json`) и Netlify (`public/_redirects`) уже включена. Добавьте `VITE_FIREBASE_*` в переменные окружения хостинга **перед сборкой** и домен в Firebase Authorized domains.
+
+Для сдачи укажите фактические ссылки на GitHub-репозиторий и опубликованное приложение. Firebase-проект и публикация требуют доступа к вашим аккаунтам и пока не настроены.
+
+## Документация
+
+- https://firebase.google.com/docs/auth/web/start
+- https://firebase.google.com/docs/auth/web/google-signin
+- https://firebase.google.com/docs/auth/web/auth-state-persistence
+- https://vite.dev/guide/env-and-mode
+- https://tanstack.com/query/latest/docs/framework/react/guides/caching
