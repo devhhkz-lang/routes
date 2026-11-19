@@ -4,7 +4,7 @@ import { CacheFirst, NetworkFirst } from 'workbox-strategies'
 import { ExpirationPlugin } from 'workbox-expiration'
 import { CacheableResponsePlugin } from 'workbox-cacheable-response'
 
-const API_ORIGIN = 'https://your-public-api.com'   // ваш API
+const API_ORIGIN = "https://dummyjson.com/products"   // ваш API
 
 // Обновление по кнопке
 self.addEventListener('message', (e) => {

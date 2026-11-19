@@ -1,11 +1,20 @@
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useItem } from "../hooks/useItems";
+import { useOnline } from "../hooks/useOnline";
 import Status from "../components/Status";
+import CachedBanner from "../components/CachedBanner";
 
 export default function ItemDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: item, error, loading } = useItem(id);
+  const location = useLocation();
+  const online = useOnline();
+  const { data: item, error, loading, fromCache } = useItem(id);
+
+  // Нет сети, а этот товар раньше не открывали (в кэше его нет): страница /offline
+  if (error && !item && !online) {
+    return <Navigate to="/offline" replace state={{ from: location.pathname }} />;
+  }
 
   return (
     <>
@@ -14,9 +23,11 @@ export default function ItemDetails() {
         <Link to="/items">Все товары</Link>
       </p>
 
+      <CachedBanner show={fromCache} />
+
       <Status loading={loading} error={error} />
 
-      {item && !error && (
+      {item && (
         <div className="details">
           <img src={item.thumbnail} alt={item.title} />
           <div>
