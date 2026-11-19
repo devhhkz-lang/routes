@@ -5,6 +5,8 @@ import { queryClient } from "./services/queryClient";
 import { AuthProvider } from "./context/AuthContext";
 import App from "./App";
 import "./styles/style.css";
+import "@fontsource-variable/bricolage-grotesque";
+import "@fontsource-variable/instrument-sans";
 
 createRoot(document.getElementById("root")).render(
   <BrowserRouter>

@@ -1,7 +1,9 @@
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useLocation, useSearchParams } from "react-router-dom";
 import { useItems } from "../hooks/useItems";
+import { useOnline } from "../hooks/useOnline";
 import Card from "../components/Card";
 import Status from "../components/Status";
+import CachedBanner from "../components/CachedBanner";
 
 const PER_PAGE = 12;
 
@@ -16,7 +18,9 @@ function Select({ value, onChange, options, label }) {
 
 export default function Items() {
   const [params, setParams] = useSearchParams();
-  const { data, error, loading } = useItems();
+  const { data, error, loading, fromCache } = useItems();
+  const online = useOnline();
+  const location = useLocation();
 
   // Значения берём из URL
   const q = params.get("q") || "";
@@ -24,6 +28,17 @@ export default function Items() {
   const stock = params.get("stock") || "";
   const sort = params.get("sort") || "";
   const requestedPage = Number(params.get("page"));
+
+  // Нет сети и данных нет вообще (ни свежих, ни из кэша): страница /offline
+  if (error && !data && !online) {
+    return (
+      <Navigate
+        to="/offline"
+        replace
+        state={{ from: location.pathname + location.search }}
+      />
+    );
+  }
 
   // Меняем один параметр в URL (при смене фильтра возвращаемся на 1 страницу)
   function update(key, value) {
@@ -58,6 +73,7 @@ export default function Items() {
   return (
     <>
       <h1>Товары</h1>
+      <CachedBanner show={fromCache} />
 
       <div className="filters">
         <input placeholder="Поиск..." value={q} onChange={(e) => update("q", e.target.value)} />
